@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 220 60% 97%; /* Lighter blueish-gray */
+  --foreground: 224 71% 10%; /* Darker blue for text */
+  --card: 0 0% 100%;
+  --card-foreground: 224 71% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 71% 10%;
+  --primary: 158 76% 42%; /* Slightly darker green */
+  --primary-foreground: 0 0% 100%; /* White */
+  --secondary: 220 25% 95%; /* Lighter gray for secondary elements */
+  --secondary-foreground: 222 47% 15%; /* Darker secondary text */
+  --muted: 220 20% 93%; /* Muted gray */
+  --muted-foreground: 220 10% 45%; /* Muted text */
+  --accent: 175 60% 94%; /* Light teal accent */
+  --accent-foreground: 175 67% 30%; /* Darker teal text on accent */
+  --destructive: 0 72% 51%; /* Softer red */
+  --destructive-foreground: 0 0% 98%;
+  --border: 220 20% 88%; /* Softer border */
+  --input: 220 20% 92%; /* Lighter input background */
+  --ring: 158 60% 50%; /* Green ring for focus */
+  --radius: 0.75rem;
+
+  --medical-blue: 200 89% 55%;
+  --medical-red: 0 72% 51%;
+  --medical-green: 158 76% 42%;
+  --medical-teal: 175 67% 38%;
+}
+
+* {
+  border-color: hsl(var(--border));
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.creative-gradient {
+  background: linear-gradient(135deg, hsl(var(--medical-teal)) 0%, hsl(var(--primary)) 100%);
+}
+
+.card-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+.health-card {
+  background-image: 
+    radial-gradient(circle at top left, hsla(175, 50%, 95%, 0.5) 0%, transparent 30%),
+    radial-gradient(circle at bottom right, hsla(158, 50%, 95%, 0.5) 0%, transparent 30%),
+    linear-gradient(135deg, hsl(0 0% 100%), hsl(220 25% 98%));
+  border: 1px solid hsl(var(--border));
+  aspect-ratio: 85.6 / 53.98; /* Standard ID-1 card size */
+}
+
+
+@keyframes pulse-live {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.3;
+  }
+}
+
+.live-indicator::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: currentColor; /* Use text color for pulsing */
+  animation: pulse-live 2s infinite ease-in-out;
+}
+
+/* Custom scrollbar for a cleaner look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--secondary) / 0.5);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.6);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.8);
+}
+
+/* Tailwind CSS Animate plugin classes for Accordion */
+@keyframes accordion-down {
+  from { height: 0; opacity: 0; }
+  to { height: var(--radix-accordion-content-height); opacity: 1; }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); opacity: 1; }
+  to { height: 0; opacity: 0; }
+}
+.animate-accordion-down {
+  animation: accordion-down 0.3s ease-out;
+}
+.animate-accordion-up {
+  animation: accordion-up 0.3s ease-out;
+}
+
+/* Input focus styles */
+.focus-visible\\:ring-green-500:focus-visible {
+    --tw-ring-color: hsl(var(--ring)) !important;
+}
+.focus\\:ring-green-500:focus {
+    --tw-ring-color: hsl(var(--ring)) !important;
+}
+.focus\\:border-green-500:focus {
+    border-color: hsl(var(--ring)) !important;
+}
