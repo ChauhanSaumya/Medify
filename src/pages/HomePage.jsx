@@ -13,16 +13,11 @@ import HowToUseSection from '@/components/home/HowToUseSection';
 import DashboardContent from '@/components/home/DashboardContent';
 
 const initialFormState = {
-  name: '', 
-  age: '', 
-  bloodGroup: '', 
-  allergies: '', 
-  medicalConditions: '',
-  medications: '', 
-  emergencyContact: '', 
-  additionalNotes: '', 
-  healthReportLinks: [''], // Changed to array with one empty string
-  profilePicture: null,
+  name: '', age: '', bloodGroup: '', allergies: '', medicalConditions: '',
+  medications: '', emergencyContact: '', additionalNotes: '', healthReportLinks: '', profilePicture: null,
+  medicalDocumentUrls: [], 
+  medicalDocumentFilesToUpload: [],
+  medicalDocumentsToRemove: [],
 };
 
 const base64ToBlob = (base64, contentType = '', sliceSize = 512) => {
@@ -41,6 +36,7 @@ const base64ToBlob = (base64, contentType = '', sliceSize = 512) => {
 
   return new Blob(byteArrays, { type: contentType });
 };
+
 
 const HomePage = ({ session }) => {
   const { toast } = useToast();
@@ -88,18 +84,6 @@ const HomePage = ({ session }) => {
       }
       
       if (data) {
-        // Parse health_report_links - handle both string and array formats
-        let healthReportLinksArray = [''];
-        if (data.health_report_links) {
-          if (Array.isArray(data.health_report_links)) {
-            healthReportLinksArray = data.health_report_links.length > 0 ? data.health_report_links : [''];
-          } else if (typeof data.health_report_links === 'string') {
-            // Convert old single string format to array
-            const trimmed = data.health_report_links.trim();
-            healthReportLinksArray = trimmed ? [trimmed] : [''];
-          }
-        }
-
         const fetchedData = {
           name: data.name || '',
           age: data.age || '',
@@ -109,8 +93,11 @@ const HomePage = ({ session }) => {
           medications: data.medications || '',
           emergencyContact: data.emergency_contact || '',
           additionalNotes: data.additional_notes || '',
-          healthReportLinks: healthReportLinksArray,
+          healthReportLinks: data.health_report_links || '',
           profilePicture: data.profile_picture_url || null,
+          medicalDocumentUrls: data.medical_document_urls || [],
+          medicalDocumentFilesToUpload: [],
+          medicalDocumentsToRemove: [],
         };
         setFormData(fetchedData);
         const cardPath = data.qr_code_url || `/card/${user.user.id}`;
@@ -119,7 +106,7 @@ const HomePage = ({ session }) => {
         setShowDemoDataInCard(false);
         setIsCardDataSaved(true); 
       } else {
-         setFormData({...initialFormState});
+         setFormData({...initialFormState, medicalDocumentUrls: []});
          const cardPath = `/card/${user.user.id}`;
          setQrCodeUrl(cardPath);
          setPublicCardLink(`${window.location.origin}${cardPath}`);
@@ -132,7 +119,7 @@ const HomePage = ({ session }) => {
         description: error.message || 'Could not load your health card information.',
         variant: 'destructive',
       });
-      setFormData({...initialFormState}); 
+      setFormData({...initialFormState, medicalDocumentUrls: []}); 
       setShowDemoDataInCard(true);
       setIsCardDataSaved(false);
     } finally {
@@ -198,9 +185,39 @@ const HomePage = ({ session }) => {
        profilePictureUrlToSave = null;
     }
 
-    // Filter out empty health report links
-    const filteredHealthReportLinks = currentFormDataFromForm.healthReportLinks
-      .filter(link => link && link.trim() !== '');
+
+    let currentMedicalDocUrls = Array.isArray(formData.medicalDocumentUrls) ? [...formData.medicalDocumentUrls] : [];
+
+    if (currentFormDataFromForm.medicalDocumentsToRemove && currentFormDataFromForm.medicalDocumentsToRemove.length > 0) {
+      try {
+        const filesToRemovePaths = currentFormDataFromForm.medicalDocumentsToRemove.map(url => {
+          const parts = url.split('/');
+          return parts.slice(parts.indexOf('medical-documents') + 1).join('/');
+        });
+        const { error: deleteError } = await supabase.storage.from('medical-documents').remove(filesToRemovePaths);
+        if (deleteError) console.warn("Some medical documents couldn't be deleted from storage:", deleteError);
+        currentMedicalDocUrls = currentMedicalDocUrls.filter(doc => !currentFormDataFromForm.medicalDocumentsToRemove.includes(doc.url));
+      } catch (error) {
+        console.error("Error deleting medical documents from storage:", error);
+      }
+    }
+    
+    if (currentFormDataFromForm.medicalDocumentFilesToUpload && currentFormDataFromForm.medicalDocumentFilesToUpload.length > 0) {
+      const uploadPromises = currentFormDataFromForm.medicalDocumentFilesToUpload.map(async (file) => {
+        const fileName = `doc-${session.user.id}-${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage.from('medical-documents').upload(fileName, file, { contentType: file.type });
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from('medical-documents').getPublicUrl(uploadData.path);
+        return { url: urlData.publicUrl, name: file.name };
+      });
+      try {
+        const newUploadedUrls = await Promise.all(uploadPromises);
+        currentMedicalDocUrls.push(...newUploadedUrls);
+      } catch (error) {
+        console.error("Medical document upload error:", error);
+        toast({ title: 'Medical Document Upload Error', description: error.message || 'Failed to upload one or more medical documents.', variant: 'destructive' });
+      }
+    }
 
     const currentCardPath = qrCodeUrl || `/card/${session.user.id}`;
     const healthCardData = {
@@ -213,9 +230,10 @@ const HomePage = ({ session }) => {
       medications: currentFormDataFromForm.medications,
       emergency_contact: currentFormDataFromForm.emergencyContact,
       additional_notes: currentFormDataFromForm.additionalNotes,
-      health_report_links: filteredHealthReportLinks.length > 0 ? filteredHealthReportLinks : null,
+      health_report_links: currentFormDataFromForm.healthReportLinks,
       profile_picture_url: profilePictureUrlToSave,
-      qr_code_url: currentCardPath,
+      qr_code_url: currentCardPath, 
+      medical_document_urls: currentMedicalDocUrls,
     };
 
     try {
@@ -225,7 +243,10 @@ const HomePage = ({ session }) => {
       setFormData(prev => ({
         ...prev, 
         ...currentFormDataFromForm, 
-        profilePicture: profilePictureUrlToSave,
+        profilePicture: profilePictureUrlToSave, 
+        medicalDocumentUrls: currentMedicalDocUrls,
+        medicalDocumentFilesToUpload: [], 
+        medicalDocumentsToRemove: [] 
       }));
       setShowDemoDataInCard(false); 
       setIsCardDataSaved(true);
@@ -240,8 +261,8 @@ const HomePage = ({ session }) => {
   };
   
   const handleReset = async () => {
-    const newInitialState = {...initialFormState};
-    setFormData(newInitialState);
+    const newInitialStateWithDocs = {...initialFormState, medicalDocumentUrls: []};
+    setFormData(newInitialStateWithDocs);
     setShowDemoDataInCard(true); 
     setIsCardDataSaved(false);
     
@@ -258,7 +279,8 @@ const HomePage = ({ session }) => {
           emergency_contact: null, 
           additional_notes: null, 
           health_report_links: null,
-          profile_picture_url: null,
+          profile_picture_url: null, 
+          medical_document_urls: [] 
         };
 
         const { error } = await supabase
@@ -277,6 +299,8 @@ const HomePage = ({ session }) => {
     }
     const profilePicInput = document.getElementById('profilePicture');
     if (profilePicInput) profilePicInput.value = '';
+    const medicalDocsInput = document.getElementById('medicalDocuments');
+    if (medicalDocsInput) medicalDocsInput.value = '';
   };
 
   const copyToClipboard = (text) => {
@@ -286,6 +310,7 @@ const HomePage = ({ session }) => {
       toast({ title: 'Failed to Copy', description: err.message, variant: 'destructive' });
     });
   };
+
 
   return (
     <motion.div 
