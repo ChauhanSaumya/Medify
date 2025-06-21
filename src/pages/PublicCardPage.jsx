@@ -125,12 +125,7 @@ const PublicCardPage = () => {
             <h2 className="text-lg font-semibold text-green-700 mb-2">Medical Conditions</h2>
             <p className="text-gray-700">{healthData.medical_conditions || 'None'}</p>
           </div>
-
-          <div className="mt-4">
-            <h2 className="text-lg font-semibold text-green-700 mb-2">Medications</h2>
-            <p className="text-gray-700">{healthData.current_medications || 'None'}</p>
-          </div>
-
+          
           <div className="mt-4">
             <h2 className="text-lg font-semibold text-green-700 mb-2">Additional Notes</h2>
             <p className="text-gray-700">{healthData.additional_notes || 'None'}</p>
@@ -152,28 +147,9 @@ const PublicCardPage = () => {
               <span className="text-gray-500">No Reports Uploaded</span>
             )}
           </div>
-
-          {/* Uploaded Medical Documents - Always visible */}
-          <div className="mt-4">
-            <h2 className="text-lg font-semibold text-green-700 mb-2">Uploaded Medical Documents</h2>
-            {healthData.medical_document_urls && healthData.medical_document_urls.length > 0 ? (
-              <ul className="space-y-2">
-                {healthData.medical_document_urls.map((docUrl, index) => (
-                  <li key={index}>
-                    <a
-                      href={docUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      📄 View Document {index + 1}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <span className="text-gray-500">No Documents Uploaded</span>
-            )}
+           <div className="mt-4">
+            <h2 className="text-lg font-semibold text-green-700 mb-2">Current Medications</h2>
+            <p className="text-gray-700">{healthData.current_medications || 'None'}</p>
           </div>
         </div>
 
