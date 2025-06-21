@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { Edit3, User, Phone, Droplets, Heart, Activity, Info, RotateCcw, ChevronDown, UploadCloud, Image as ImageIcon, Save, Loader2, Link as LinkIcon, FileText, XCircle } from 'lucide-react';
+import { Edit3, User, Phone, Droplets, Heart, Activity, Info, RotateCcw, ChevronDown, UploadCloud, Image as ImageIcon, Save, Loader2, Link as LinkIcon, XCircle, Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const HealthForm = ({ formData: initialFormData, setFormData: setParentFormData, onReset, onSubmit, isSaving, disabled, session }) => {
@@ -16,9 +15,8 @@ const HealthForm = ({ formData: initialFormData, setFormData: setParentFormData,
   const [errors, setErrors] = useState({});
   const [openSections, setOpenSections] = useState({ essential: true, medical: true }); 
   const profilePicInputRef = useRef(null);
-  const medicalDocsInputRef = useRef(null);
   const [profilePicFileName, setProfilePicFileName] = useState('');
-  const [medicalDocFiles, setMedicalDocFiles] = useState([]); 
+  const [healthReportLinks, setHealthReportLinks] = useState(['']); // Initialize with one empty link
 
   useEffect(() => {
     setLocalFormData(initialFormData);
@@ -28,10 +26,12 @@ const HealthForm = ({ formData: initialFormData, setFormData: setParentFormData,
       setProfilePicFileName('');
     }
     
-    if (initialFormData.medicalDocumentUrls && Array.isArray(initialFormData.medicalDocumentUrls)) {
-      setMedicalDocFiles(initialFormData.medicalDocumentUrls.map(doc => ({ name: doc.name || 'Uploaded Document', url: doc.url, isExisting: true })));
+    // Initialize health report links
+    if (initialFormData.healthReportLinks && initialFormData.healthReportLinks.trim()) {
+      const links = initialFormData.healthReportLinks.split('\n').filter(link => link.trim());
+      setHealthReportLinks(links.length > 0 ? links : ['']);
     } else {
-      setMedicalDocFiles([]);
+      setHealthReportLinks(['']);
     }
 
   }, [initialFormData]);
@@ -82,52 +82,30 @@ const HealthForm = ({ formData: initialFormData, setFormData: setParentFormData,
     }
   };
 
-  const handleMedicalDocsChange = (event) => {
-    const files = Array.from(event.target.files);
-    const newFiles = [];
-    let hasError = false;
-
-    files.forEach(file => {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit per PDF
-        toast({ title: "❌ File Too Large", description: `${file.name} is over 5MB. Please upload smaller PDFs.`, variant: "destructive" });
-        hasError = true; return;
-      }
-      if (file.type !== 'application/pdf') {
-        toast({ title: "❌ Invalid File Type", description: `${file.name} is not a PDF. Please upload PDF files only.`, variant: "destructive" });
-        hasError = true; return;
-      }
-      newFiles.push({ file, name: file.name, isNew: true });
-    });
-
-    if (!hasError && newFiles.length > 0) {
-      const updatedMedicalDocFiles = [...medicalDocFiles, ...newFiles];
-      setMedicalDocFiles(updatedMedicalDocFiles);
-      setParentFormData(prev => ({ ...prev, medicalDocumentFilesToUpload: updatedMedicalDocFiles.filter(f => f.isNew) }));
-      toast({ title: "📄 PDFs Selected", description: `${newFiles.length} new document(s) ready. Save to upload.` });
-    }
-    if(medicalDocsInputRef.current) medicalDocsInputRef.current.value = ""; 
+  const handleHealthReportLinkChange = (index, value) => {
+    const updatedLinks = [...healthReportLinks];
+    updatedLinks[index] = value;
+    setHealthReportLinks(updatedLinks);
+    
+    // Update the form data with the combined links
+    const combinedLinks = updatedLinks.filter(link => link.trim()).join('\n');
+    handleInputChange('healthReportLinks', combinedLinks);
   };
 
-  const removeMedicalDoc = (indexToRemove) => {
-    const fileToRemove = medicalDocFiles[indexToRemove];
-    const updatedFiles = medicalDocFiles.filter((_, index) => index !== indexToRemove);
-    setMedicalDocFiles(updatedFiles);
-
-    if (fileToRemove.isExisting) {
-      setParentFormData(prev => ({
-        ...prev,
-        medicalDocumentUrls: prev.medicalDocumentUrls.filter(doc => doc.url !== fileToRemove.url),
-        medicalDocumentsToRemove: [...(prev.medicalDocumentsToRemove || []), fileToRemove.url] 
-      }));
-    } else {
-      setParentFormData(prev => ({
-        ...prev,
-        medicalDocumentFilesToUpload: updatedFiles.filter(f => f.isNew)
-      }));
-    }
-    toast({ title: "🗑️ Document Removed", description: `${fileToRemove.name} has been removed from the list.` });
+  const addHealthReportLink = () => {
+    setHealthReportLinks([...healthReportLinks, '']);
   };
 
+  const removeHealthReportLink = (index) => {
+    if (healthReportLinks.length > 1) {
+      const updatedLinks = healthReportLinks.filter((_, i) => i !== index);
+      setHealthReportLinks(updatedLinks);
+      
+      // Update the form data with the combined links
+      const combinedLinks = updatedLinks.filter(link => link.trim()).join('\n');
+      handleInputChange('healthReportLinks', combinedLinks);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -137,8 +115,6 @@ const HealthForm = ({ formData: initialFormData, setFormData: setParentFormData,
     if (validateForm()) {
       const dataToSubmit = {
         ...localFormData,
-        medicalDocumentFilesToUpload: medicalDocFiles.filter(f => f.isNew).map(f => f.file),
-        medicalDocumentsToRemove: medicalDocFiles.filter(f => f.isExisting && !localFormData.medicalDocumentUrls?.find(existingDoc => existingDoc.url === f.url)).map(f => f.url)
       };
       if (onSubmit) onSubmit(dataToSubmit);
       else toast({ title: "✅ Preview Updated!", description: "Your card preview is updated. Login to save." });
@@ -154,9 +130,8 @@ const HealthForm = ({ formData: initialFormData, setFormData: setParentFormData,
     onReset(); 
     setLocalFormData(initialFormData); 
     setProfilePicFileName('');
-    setMedicalDocFiles(initialFormData.medicalDocumentUrls ? initialFormData.medicalDocumentUrls.map(doc => ({ name: doc.name || 'Uploaded Document', url: doc.url, isExisting: true })) : []);
+    setHealthReportLinks(['']);
     if(profilePicInputRef.current) profilePicInputRef.current.value = "";
-    if(medicalDocsInputRef.current) medicalDocsInputRef.current.value = "";
   }
 
   const toggleSection = (section) => {
@@ -182,9 +157,8 @@ const HealthForm = ({ formData: initialFormData, setFormData: setParentFormData,
         { key: 'allergies', label: 'Allergies', type: 'textarea', placeholder: 'e.g., Peanuts, Penicillin, Bee Stings', icon: Edit3 },
         { key: 'medicalConditions', label: 'Medical Conditions', type: 'textarea', placeholder: 'e.g., Asthma, Diabetes, Hypertension', icon: Edit3 },
         { key: 'medications', label: 'Current Medications', type: 'textarea', placeholder: 'e.g., Insulin (10 units daily), Albuterol Inhaler (as needed)', icon: Edit3, note: "You can paste links to medication lists (e.g., from Google Drive). Ensure link sharing allows anyone to view (read-only)." },
-        { key: 'medicalDocuments', label: 'Medical Documents (PDFs)', type: 'multi-file', icon: FileText, ref: medicalDocsInputRef, onChange: handleMedicalDocsChange, files: medicalDocFiles, onRemove: removeMedicalDoc, accept: "application/pdf", note: "Upload relevant medical reports. Max 5MB per PDF." },
+        { key: 'healthReportLinks', label: 'Health Report Links', type: 'multi-links', icon: LinkIcon, note: "Add links to online reports (e.g., from Google Drive). Ensure link sharing allows anyone with the link to view (read-only)." },
         { key: 'additionalNotes', label: 'Additional Notes', type: 'textarea', placeholder: 'e.g., Pacemaker, Organ Donor, Wears contacts', icon: Info },
-        { key: 'healthReportLinks', label: 'Other Health Report Links', type: 'textarea', placeholder: 'Paste links to online reports (one per line)', icon: LinkIcon, note: "Paste links to PDFs or documents (e.g., from Google Drive). Ensure link sharing allows anyone with the link to view (read-only)." }
       ]
     }
   ];
@@ -216,7 +190,7 @@ const HealthForm = ({ formData: initialFormData, setFormData: setParentFormData,
                   <motion.div initial={{ opacity: 0, height: (openSections[section.key] || section.key === 'medical') ? 'auto' : 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease: "circOut" }} className="p-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
                       {section.fields.map((field) => (
-                        <motion.div key={field.key} className={field.type === 'textarea' || field.type === 'file' || field.type === 'multi-file' ? 'md:col-span-2' : ''} initial={{ opacity:0, y:5 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.2, delay: Math.random()*0.1 }}>
+                        <motion.div key={field.key} className={field.type === 'textarea' || field.type === 'file' || field.type === 'multi-links' ? 'md:col-span-2' : ''} initial={{ opacity:0, y:5 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.2, delay: Math.random()*0.1 }}>
                           <Label htmlFor={field.key} className={`flex items-center text-xs font-medium text-gray-600 mb-1 ${field.required ? "after:content-['*'] after:text-red-500 after:ml-0.5" : ''}`}>
                             {field.icon && <field.icon className="w-3.5 h-3.5 mr-1.5 text-gray-400" />} {field.label}
                           </Label>
@@ -231,32 +205,46 @@ const HealthForm = ({ formData: initialFormData, setFormData: setParentFormData,
                               </div>
                               {field.note && <p className="text-xs text-gray-500 mt-1.5">{field.note}</p>}
                             </>
-                          ) : field.type === 'multi-file' ? (
+                          ) : field.type === 'multi-links' ? (
                             <>
-                              <div className="flex items-center space-x-2 mb-2">
-                                <Button type="button" variant="outline" size="sm" onClick={() => field.ref.current?.click()} className="flex-shrink-0" disabled={disabled || isSaving}>
-                                  <UploadCloud className="w-4 h-4 mr-2" /> Add PDFs
-                                </Button>
-                                <Input id={field.key} type="file" ref={field.ref} onChange={field.onChange} className="hidden" accept={field.accept} multiple disabled={disabled || isSaving} />
-                                {field.note && <p className="text-xs text-gray-500 mt-1.5 flex-grow">{field.note}</p>}
-                              </div>
-                              {field.files && field.files.length > 0 && (
-                                <div className="mt-2 space-y-2">
-                                  {field.files.map((file, index) => (
-                                    <div key={index} className="flex items-center justify-between p-2 border rounded-md bg-gray-50 text-xs">
-                                      <div className="flex items-center gap-2 truncate">
-                                        <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
-                                        <span className="truncate" title={file.name}>{file.name}</span>
-                                        {file.isExisting && <span className="text-green-600 text-[10px]">(Uploaded)</span>}
-                                        {file.isNew && <span className="text-blue-600 text-[10px]">(New)</span>}
-                                      </div>
-                                      <Button type="button" variant="ghost" size="sm" onClick={() => field.onRemove(index)} disabled={disabled || isSaving} className="p-1 h-auto">
+                              <div className="space-y-2">
+                                {healthReportLinks.map((link, index) => (
+                                  <div key={index} className="flex items-center gap-2">
+                                    <Input
+                                      type="url"
+                                      value={link}
+                                      onChange={(e) => handleHealthReportLinkChange(index, e.target.value)}
+                                      placeholder="https://example.com/health-report"
+                                      className="flex-1 text-sm border-gray-300 focus:border-green-500 focus:ring-green-500"
+                                      disabled={disabled || isSaving}
+                                    />
+                                    {healthReportLinks.length > 1 && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeHealthReportLink(index)}
+                                        disabled={disabled || isSaving}
+                                        className="p-1 h-8 w-8 flex-shrink-0"
+                                      >
                                         <XCircle className="w-4 h-4 text-gray-500 hover:text-red-500" />
                                       </Button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                                    )}
+                                  </div>
+                                ))}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={addHealthReportLink}
+                                  className="flex items-center gap-1 text-xs"
+                                  disabled={disabled || isSaving}
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  Add Another Link
+                                </Button>
+                              </div>
+                              {field.note && <p className="text-xs text-gray-500 mt-1.5">{field.note}</p>}
                             </>
                           ) : field.type === 'select' ? (
                             <Select value={localFormData[field.key] || ''} onValueChange={(value) => handleInputChange(field.key, value)} disabled={disabled || isSaving}>
