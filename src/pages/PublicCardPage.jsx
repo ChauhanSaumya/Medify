@@ -144,8 +144,26 @@ const PublicCardPage = () => {
               </a>
             </div>
           )}
+             {healthData.medical_document_urls && healthData.medical_document_urls.length > 0 && (
+            <div className="mt-4">
+              <h2 className="text-lg font-semibold text-green-700 mb-2">Uploaded Medical Documents</h2>
+              <ul className="space-y-2">
+                {healthData.medical_document_urls.map((docUrl, index) => (
+                  <li key={index}>
+                    <a
+                      href={docUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      📄 View Document {index + 1}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
-
         <div className="mt-8 text-center">
           <Button asChild variant="outline">
             <Link to="/">
