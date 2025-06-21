@@ -144,7 +144,8 @@ const PublicCardPage = () => {
               </a>
             </div>
           )}
-             {healthData.medical_document_urls && healthData.medical_document_urls.length > 0 && (
+
+          {healthData.medical_document_urls && healthData.medical_document_urls.length > 0 && (
             <div className="mt-4">
               <h2 className="text-lg font-semibold text-green-700 mb-2">Uploaded Medical Documents</h2>
               <ul className="space-y-2">
@@ -164,6 +165,7 @@ const PublicCardPage = () => {
             </div>
           )}
         </div>
+
         <div className="mt-8 text-center">
           <Button asChild variant="outline">
             <Link to="/">
