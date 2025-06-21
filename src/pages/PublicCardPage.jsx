@@ -136,18 +136,27 @@ const PublicCardPage = () => {
             <p className="text-gray-700">{healthData.additional_notes || 'None'}</p>
           </div>
 
-          {healthData.health_report_links && (
-            <div className="mt-4">
-              <h2 className="text-lg font-semibold text-green-700 mb-2">Health Reports</h2>
-              <a href={healthData.health_report_links} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-                View Reports
+          {/* Health Reports - Always visible */}
+          <div className="mt-4">
+            <h2 className="text-lg font-semibold text-green-700 mb-2">Health Reports</h2>
+            {healthData.health_report_links ? (
+              <a
+                href={healthData.health_report_links}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline"
+              >
+                📄 View Health Reports
               </a>
-            </div>
-          )}
+            ) : (
+              <span className="text-gray-500">No Reports Uploaded</span>
+            )}
+          </div>
 
-          {healthData.medical_document_urls && healthData.medical_document_urls.length > 0 && (
-            <div className="mt-4">
-              <h2 className="text-lg font-semibold text-green-700 mb-2">Uploaded Medical Documents</h2>
+          {/* Uploaded Medical Documents - Always visible */}
+          <div className="mt-4">
+            <h2 className="text-lg font-semibold text-green-700 mb-2">Uploaded Medical Documents</h2>
+            {healthData.medical_document_urls && healthData.medical_document_urls.length > 0 ? (
               <ul className="space-y-2">
                 {healthData.medical_document_urls.map((docUrl, index) => (
                   <li key={index}>
@@ -162,8 +171,10 @@ const PublicCardPage = () => {
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            ) : (
+              <span className="text-gray-500">No Documents Uploaded</span>
+            )}
+          </div>
         </div>
 
         <div className="mt-8 text-center">
