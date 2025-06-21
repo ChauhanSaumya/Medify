@@ -127,13 +127,8 @@ const PublicCardPage = () => {
           </div>
 
           <div className="mt-4">
-            <h2 className="text-lg font-semibold text-green-700 mb-2">Medications</h2>
+            <h2 className="text-lg font-semibold text-green-700 mb-2">Current Medications</h2>
             <p className="text-gray-700">{healthData.current_medications || 'None'}</p>
-          </div>
-
-          <div className="mt-4">
-            <h2 className="text-lg font-semibold text-green-700 mb-2">Additional Notes</h2>
-            <p className="text-gray-700">{healthData.additional_notes || 'None'}</p>
           </div>
 
           {/* Health Reports - Always visible */}
@@ -175,8 +170,14 @@ const PublicCardPage = () => {
               <span className="text-gray-500">No Documents Uploaded</span>
             )}
           </div>
+          
+           <div className="mt-4">
+            <h2 className="text-lg font-semibold text-green-700 mb-2">Additional Notes</h2>
+            <p className="text-gray-700">{healthData.additional_notes || 'None'}</p>
+          </div>
+          
         </div>
-
+ 
         <div className="mt-8 text-center">
           <Button asChild variant="outline">
             <Link to="/">
