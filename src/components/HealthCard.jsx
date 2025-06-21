@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Download, User, Phone, ShieldCheck, Info, FileText } from 'lucide-react';
+import { Download, User, Phone, ShieldCheck, Info } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -337,26 +337,6 @@ const HealthCard = ({
             </div>
           </div>
           
-          {isPublicView && displayData.medicalDocumentUrls && displayData.medicalDocumentUrls.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-dashed border-gray-300/70">
-              <p className="text-xs text-gray-500 mb-1">Medical Documents:</p>
-              <div className="space-y-1">
-                {displayData.medicalDocumentUrls.map((doc, index) => (
-                  <a 
-                    key={index} 
-                    href={doc.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="flex items-center text-xs text-blue-600 hover:underline"
-                  >
-                    <FileText className="w-3 h-3 mr-1" />
-                    {doc.name || `Document ${index + 1}`}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
         </CardContent>
       </Card>
       {!isGuestMode && (
