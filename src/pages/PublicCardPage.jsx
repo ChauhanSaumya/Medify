@@ -47,6 +47,25 @@ const PublicCardPage = () => {
     fetchPublicHealthCard();
   }, [fetchPublicHealthCard]);
 
+  // Helper function to parse health report links
+  const parseHealthReportLinks = (linksString) => {
+    if (!linksString || typeof linksString !== 'string') return [];
+    
+    return linksString
+      .split('\n') // Split by newlines
+      .map(link => link.trim()) // Remove whitespace
+      .filter(link => link.length > 0) // Remove empty lines
+      .filter(link => {
+        // Basic URL validation
+        try {
+          new URL(link);
+          return true;
+        } catch {
+          return link.startsWith('http://') || link.startsWith('https://');
+        }
+      });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-50 via-teal-50 to-emerald-50 p-4 pt-20 text-center">
@@ -90,7 +109,8 @@ const PublicCardPage = () => {
         </div>
 
         <h1 className="text-2xl font-bold text-green-700 mb-4 text-center">Emergency Medical Information</h1>
-        <p className="text-sm text-gray-600 text-center mb-8">
+        <p className="text-sm text-gray-600 text-center mb-8 flex items-center justify-center gap-1.5">
+          <ShieldCheck className="w-4 h-4 text-green-600" />
           This is a secure, read-only view of a Medify health card.
         </p>
 
@@ -126,39 +146,49 @@ const PublicCardPage = () => {
             <p className="text-gray-700">{healthData.medical_conditions || 'None'}</p>
           </div>
           
-           <div className="mt-4">
+          <div className="mt-4">
             <h2 className="text-lg font-semibold text-green-700 mb-2">Current Medications</h2>
-            <p className="text-gray-700">{healthData.current_medications || 'None'}</p>
+            <p className="text-gray-700">{healthData.medications || 'None'}</p>
           </div>
   
-          {/* Health Reports - Always visible */}
+          {/* Health Reports - Handle multiple links */}
           <div className="mt-4">
             <h2 className="text-lg font-semibold text-green-700 mb-2">Health Reports</h2>
-            {healthData.health_report_links ? (
-              <a
-                href={healthData.health_report_links}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline"
-              >
-                📄 View Health Reports
-              </a>
-            ) : (
-              <span className="text-gray-500">No Reports Uploaded</span>
-            )}
+            {(() => {
+              const healthReportLinks = parseHealthReportLinks(healthData.health_report_links);
+              if (healthReportLinks.length > 0) {
+                return (
+                  <div className="space-y-2">
+                    {healthReportLinks.map((link, index) => (
+                      <div key={index}>
+                        <a
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline hover:text-blue-800 transition-colors block"
+                        >
+                          📄 Health Report {healthReportLinks.length > 1 ? `#${index + 1}` : ''}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                );
+              } else {
+                return <span className="text-gray-500">No Reports Uploaded</span>;
+              }
+            })()}
           </div>
             
           <div className="mt-4">
             <h2 className="text-lg font-semibold text-green-700 mb-2">Additional Notes</h2>
             <p className="text-gray-700">{healthData.additional_notes || 'None'}</p>
           </div>
-
         </div>
 
         <div className="mt-8 text-center">
-          <Button asChild variant="outline">
+          <Button asChild variant="link" className="text-green-600 hover:text-green-500">
             <Link to="/">
-              <ArrowLeft className="w-4 h-4 mr-2" /> Go Back to Medify Home
+              Learn more about Medify
             </Link>
           </Button>
         </div>
